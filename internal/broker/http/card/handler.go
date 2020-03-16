@@ -2,8 +2,8 @@ package card
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/dipress/cards/internal/broker/http/handler"
@@ -31,29 +31,27 @@ type CreateHandler struct {
 
 // Handle implements Handler interface.
 func (h *CreateHandler) Handle(w http.ResponseWriter, r *http.Request) error {
-	var f card.Form
-
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return fmt.Errorf("bad request: %w", response.BadRequest(w))
+	if err := h.process(w, r); err != nil {
+		return response.HandleError(err, w)
 	}
 
-	if err := f.UnmarshalJSON(data); err != nil {
-		return fmt.Errorf("unmarshal json: %w", response.BadRequest(w))
+	return nil
+}
+
+func (h *CreateHandler) process(w http.ResponseWriter, r *http.Request) error {
+	var f card.Form
+
+	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
+		return response.ErrBadRequest
 	}
 
 	card, err := h.Create(r.Context(), &f)
 	if err != nil {
-		return fmt.Errorf("create: %w", response.InternalServerError(w))
+		return fmt.Errorf("create: %w", err)
 	}
 
-	data, err = card.MarshalJSON()
-	if err != nil {
-		return fmt.Errorf("marshal json: %w", response.InternalServerError(w))
-	}
-
-	if _, err := w.Write(data); err != nil {
-		return fmt.Errorf("write response: %w", response.InternalServerError(w))
+	if err := json.NewEncoder(w).Encode(&card); err != nil {
+		return fmt.Errorf("encode: %w", err)
 	}
 
 	return nil

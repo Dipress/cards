@@ -13,6 +13,7 @@ func Test_Create_Service(t *testing.T) {
 	tests := []struct {
 		name           string
 		repositoryFunc func(mock *MockRepository)
+		validaterFunc  func(mock *MockValidater)
 		wantErr        bool
 	}{
 		{
@@ -20,12 +21,26 @@ func Test_Create_Service(t *testing.T) {
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
+			validaterFunc: func(m *MockValidater) {
+				m.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)
+			},
 			wantErr: false,
+		},
+		{
+			name:           "validation error",
+			repositoryFunc: func(m *MockRepository) {},
+			validaterFunc: func(m *MockValidater) {
+				m.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+			},
+			wantErr: true,
 		},
 		{
 			name: "create card error",
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+			},
+			validaterFunc: func(m *MockValidater) {
+				m.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wantErr: true,
 		},
@@ -40,10 +55,12 @@ func Test_Create_Service(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo := NewMockRepository(ctrl)
+			validater := NewMockValidater(ctrl)
 
 			tc.repositoryFunc(repo)
+			tc.validaterFunc(validater)
 
-			s := NewService(repo)
+			s := NewService(repo, validater)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

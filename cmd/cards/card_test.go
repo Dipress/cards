@@ -49,7 +49,29 @@ func TestCreateCard(t *testing.T) {
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("unexpected status code: %d expected: %d", resp.StatusCode, http.StatusOK)
 			}
+		}
+		t.Log("\ttest:1\tshould get a validation error")
+		{
+			cardStr := `{
+				"word": "do", 
+				"user_id": 1
+			}`
+			req, err := http.NewRequest(http.MethodPost,
+				fmt.Sprintf("http://%s/api/v1/cards", s.Addr), strings.NewReader(cardStr))
+			req.Header.Set("Content-Type", "application/json")
 
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if resp.StatusCode != http.StatusUnprocessableEntity {
+				t.Errorf("unexpected status code: %d expected: %d", resp.StatusCode, http.StatusUnprocessableEntity)
+			}
 		}
 	}
 }

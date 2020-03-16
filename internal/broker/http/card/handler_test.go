@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dipress/cards/internal/card"
+	"github.com/dipress/cards/internal/validation"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -23,6 +24,14 @@ func TestCreateHandler(t *testing.T) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&card.Card{}, nil)
 			},
 			code: http.StatusOK,
+		},
+		{
+			name: "validation",
+			serviceFunc: func(m *MockService) {
+				var ves validation.Errors
+				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, ves)
+			},
+			code: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "internal error",
