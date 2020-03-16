@@ -14,18 +14,20 @@ type Repository interface {
 
 // Validater validates card's fields.
 type Validater interface {
-	Validate(ctx context.Context, form *Form) error
+	Validate(context.Context, *Form) error
 }
 
 // Service is a use case for card creation.
 type Service struct {
 	Repository
+	Validater
 }
 
 // NewService factory prepares service for all futher operations.
-func NewService(r Repository) *Service {
+func NewService(r Repository, v Validater) *Service {
 	s := Service{
 		Repository: r,
+		Validater:  v,
 	}
 
 	return &s
@@ -33,6 +35,10 @@ func NewService(r Repository) *Service {
 
 // Create creates a card.
 func (s *Service) Create(ctx context.Context, f *Form) (*Card, error) {
+	if err := s.Validater.Validate(ctx, f); err != nil {
+		return nil, fmt.Errorf("validater validate: %w", err)
+	}
+
 	var nc NewCard
 	nc.Word = f.Word
 	nc.Transcription = f.Transcription

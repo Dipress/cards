@@ -30,7 +30,12 @@ func TestCardValidate(t *testing.T) {
 				Translation:   "сделать",
 			},
 			wantErr: true,
-			expect:  Errors{"word": "cannot be blank"},
+			expect: Errors{
+				Message: "you have validation errors",
+				Details: map[string]string{
+					"word": "cannot be blank",
+				},
+			},
 		},
 		{
 			name: "blank transcription",
@@ -39,7 +44,12 @@ func TestCardValidate(t *testing.T) {
 				Translation: "сделать",
 			},
 			wantErr: true,
-			expect:  Errors{"transcription": "cannot be blank"},
+			expect: Errors{
+				Message: "you have validation errors",
+				Details: map[string]string{
+					"transcription": "cannot be blank",
+				},
+			},
 		},
 		{
 			name: "blank translation",
@@ -48,7 +58,12 @@ func TestCardValidate(t *testing.T) {
 				Transcription: "māk",
 			},
 			wantErr: true,
-			expect:  Errors{"translation": "cannot be blank"},
+			expect: Errors{
+				Message: "you have validation errors",
+				Details: map[string]string{
+					"translation": "cannot be blank",
+				},
+			},
 		},
 	}
 

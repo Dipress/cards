@@ -10,6 +10,7 @@ import (
 	"github.com/dipress/cards/internal/card"
 	"github.com/dipress/cards/internal/storage/postgres"
 	"github.com/dipress/cards/internal/storage/postgres/schema"
+	"github.com/dipress/cards/internal/validation"
 	"github.com/mattes/migrate"
 	"github.com/pkg/errors"
 )
@@ -56,7 +57,7 @@ func setupServices(db *sql.DB) *httpBroker.Services {
 	cardRepo := postgres.NewCardRepository(db)
 
 	// Servives.
-	cardService := card.NewService(cardRepo)
+	cardService := card.NewService(cardRepo, &validation.Card{})
 
 	services := httpBroker.Services{
 		Card: cardService,
