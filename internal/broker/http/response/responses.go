@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dipress/cards/internal/card"
 	"github.com/dipress/cards/internal/validation"
 )
 
@@ -24,6 +25,8 @@ func HandleError(err error, w http.ResponseWriter) error {
 		return ValidationError(w, vErr)
 	case errors.Is(err, ErrBadRequest):
 		return BadRequest(w)
+	case errors.Is(err, card.ErrNotFound):
+		return NotFound(w)
 	}
 
 	if rErr := InternalServerError(w); rErr != nil {
@@ -33,21 +36,22 @@ func HandleError(err error, w http.ResponseWriter) error {
 	return fmt.Errorf("internal error: %w", err)
 }
 
-// InternalServerError with code 500.
-func InternalServerError(w http.ResponseWriter) error {
-	w.WriteHeader(http.StatusInternalServerError)
-	return writeError(w, "internal server error")
-}
-
 // BadRequest responds code 400.
 func BadRequest(w http.ResponseWriter) error {
 	w.WriteHeader(http.StatusBadRequest)
 	return writeError(w, "bad request")
 }
 
-type validationResponse struct {
-	Message string            `json:"message"`
-	Errors  validation.Errors `json:"errors"`
+// NotFound responds with code 404.
+func NotFound(w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNotFound)
+	return writeError(w, "not found")
+}
+
+// InternalServerError with code 500.
+func InternalServerError(w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusInternalServerError)
+	return writeError(w, "internal server error")
 }
 
 // ValidationError responds with code 422.

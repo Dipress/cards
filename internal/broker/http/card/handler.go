@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/dipress/cards/internal/broker/http/handler"
 	"github.com/dipress/cards/internal/broker/http/response"
@@ -21,7 +22,8 @@ type Handler interface {
 
 // Service contains all services.
 type Service interface {
-	Create(context.Context, *card.Form) (*card.Card, error)
+	Create(ctx context.Context, f *card.Form) (*card.Card, error)
+	Find(ctx context.Context, id int) (*card.Card, error)
 }
 
 // CreateHandler for create requests.
@@ -57,9 +59,44 @@ func (h *CreateHandler) process(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// FindHandler for find requests.
+type FindHandler struct {
+	Service
+}
+
+func (h *FindHandler) Handle(w http.ResponseWriter, r *http.Request) error {
+	if err := h.process(w, r); err != nil {
+		return response.HandleError(err, w)
+	}
+
+	return nil
+}
+
+func (h *FindHandler) process(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return response.ErrBadRequest
+	}
+
+	card, err := h.Service.Find(r.Context(), id)
+	if err != nil {
+		return fmt.Errorf("find: %w", err)
+	}
+
+	if err := json.NewEncoder(w).Encode(&card); err != nil {
+		return fmt.Errorf("encode: %w", err)
+	}
+
+	return nil
+}
+
 // Prepare prepares routes to use.
 func Prepare(subrouter *mux.Router, service Service, middleware func(handler.Handler) http.Handler) {
 	create := CreateHandler{service}
+	find := FindHandler{service}
 
 	subrouter.Handle("", middleware(&create)).Methods(http.MethodPost)
+	subrouter.Handle("/{id}", middleware(&find)).Methods(http.MethodGet)
 }
