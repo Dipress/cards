@@ -10,6 +10,7 @@ import (
 // Repository allows to work with the database.
 type Repository interface {
 	Create(context.Context, *NewCard, *Card) error
+	Find(context.Context, int) (*Card, error)
 }
 
 // Validater validates card's fields.
@@ -51,4 +52,15 @@ func (s *Service) Create(ctx context.Context, f *Form) (*Card, error) {
 	}
 
 	return &card, nil
+
+}
+
+// Find finds a card.
+func (s *Service) Find(ctx context.Context, id int) (*Card, error) {
+	c, err := s.Repository.Find(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("repository find: %w", err)
+	}
+
+	return c, nil
 }

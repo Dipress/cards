@@ -81,3 +81,51 @@ func Test_Create_Service(t *testing.T) {
 		})
 	}
 }
+
+func Test_Find_Service(t *testing.T) {
+	tests := []struct {
+		name           string
+		repositoryFunc func(m *MockRepository)
+		wantErr        bool
+	}{
+		{
+			name: "ok",
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Find(gomock.Any(), gomock.Any()).Return(&Card{}, nil)
+			},
+		},
+		{
+			name: "internal error",
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Find(gomock.Any(), gomock.Any()).Return(&Card{}, errors.New("mock error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			repo := NewMockRepository(ctrl)
+			tc.repositoryFunc(repo)
+
+			s := NewService(repo, nil)
+
+			_, err := s.Find(ctx, 1)
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.Nil(t, err)
+		})
+	}
+}

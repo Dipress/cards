@@ -20,7 +20,7 @@ type Errors struct {
 // NewErrors returns prepared errors.
 func NewErrors() Errors {
 	e := Errors{
-		Message: "you have validation errors",
+		Message: validationMsg,
 		Details: make(map[string]string),
 	}
 

@@ -73,16 +73,31 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockService) Create(arg0 context.Context, arg1 *card.Form) (*card.Card, error) {
+func (m *MockService) Create(ctx context.Context, f *card.Form) (*card.Card, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	ret := m.ctrl.Call(m, "Create", ctx, f)
 	ret0, _ := ret[0].(*card.Card)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create
-func (mr *MockServiceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) Create(ctx, f interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockService)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockService)(nil).Create), ctx, f)
+}
+
+// Find mocks base method
+func (m *MockService) Find(ctx context.Context, id int) (*card.Card, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Find", ctx, id)
+	ret0, _ := ret[0].(*card.Card)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Find indicates an expected call of Find
+func (mr *MockServiceMockRecorder) Find(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockService)(nil).Find), ctx, id)
 }

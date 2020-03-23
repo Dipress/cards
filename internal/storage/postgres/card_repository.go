@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/dipress/cards/internal/card"
@@ -27,7 +28,7 @@ func NewCardRepository(db *sql.DB) *CardRepository {
 	return &r
 }
 
-const createCard = `
+const createCardQuery = `
 	INSERT INTO cards (word, transcription, translation, user_id)
 	VALUES ($1, $2, $3, $4)
 	RETURNING id, user_id, word, transcription, translation, created_at, updated_at
@@ -35,7 +36,7 @@ const createCard = `
 
 // Create inserts a new card into the database.
 func (r *CardRepository) Create(ctx context.Context, f *card.NewCard, ca *card.Card) error {
-	if err := r.db.QueryRowContext(ctx, createCard, f.Word, f.Transcription, f.Translation, f.UserID).Scan(
+	if err := r.db.QueryRowContext(ctx, createCardQuery, f.Word, f.Transcription, f.Translation, f.UserID).Scan(
 		&ca.ID,
 		&ca.UserID,
 		&ca.Word,
@@ -48,4 +49,29 @@ func (r *CardRepository) Create(ctx context.Context, f *card.NewCard, ca *card.C
 	}
 
 	return nil
+}
+
+const findCardQuery = `SELECT * FROM cards WHERE id = $1`
+
+// Find finds a card by id.
+func (r *CardRepository) Find(ctx context.Context, id int) (*card.Card, error) {
+	var cd card.Card
+
+	if err := r.db.QueryRowContext(ctx, findCardQuery, id).Scan(
+		&cd.ID,
+		&cd.UserID,
+		&cd.Word,
+		&cd.Transcription,
+		&cd.Translation,
+		&cd.CreatedAt,
+		&cd.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, card.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("query row scan: %w", err)
+	}
+
+	return &cd, nil
 }
