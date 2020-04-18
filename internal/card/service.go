@@ -11,6 +11,7 @@ import (
 type Repository interface {
 	Create(context.Context, *NewCard, *Card) error
 	Find(context.Context, int) (*Card, error)
+	Update(context.Context, int, *Card) error
 }
 
 // Validater validates card's fields.
@@ -63,4 +64,26 @@ func (s *Service) Find(ctx context.Context, id int) (*Card, error) {
 	}
 
 	return c, nil
+}
+
+func (s *Service) Update(ctx context.Context, id int, f *Form) (*Card, error) {
+	if err := s.Validater.Validate(ctx, f); err != nil {
+		return nil, fmt.Errorf("validater validate: %w", err)
+	}
+
+	c, err := s.Repository.Find(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("repository find: %w", err)
+	}
+
+	c.UserID = f.UserID
+	c.Word = f.Word
+	c.Transcription = f.Transcription
+	c.Translation = f.Translation
+
+	if err := s.Repository.Update(ctx, id, c); err != nil {
+		return nil, fmt.Errorf("repository update: %w", err)
+	}
+
+	return c, err
 }

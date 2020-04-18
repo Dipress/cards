@@ -24,6 +24,7 @@ type Handler interface {
 type Service interface {
 	Create(ctx context.Context, f *card.Form) (*card.Card, error)
 	Find(ctx context.Context, id int) (*card.Card, error)
+	Update(ctx context.Context, id int, f *card.Form) (*card.Card, error)
 }
 
 // CreateHandler for create requests.
@@ -92,11 +93,51 @@ func (h *FindHandler) process(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// UpdateHandler for update requests.
+type UpdateHandler struct {
+	Service
+}
+
+func (h *UpdateHandler) Handle(w http.ResponseWriter, r *http.Request) error {
+	if err := h.process(w, r); err != nil {
+		return response.HandleError(err, w)
+	}
+
+	return nil
+}
+
+func (h *UpdateHandler) process(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return response.ErrBadRequest
+	}
+
+	var f card.Form
+	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
+		return response.ErrBadRequest
+	}
+
+	card, err := h.Service.Update(r.Context(), id, &f)
+	if err != nil {
+		return fmt.Errorf("update: %w", err)
+	}
+
+	if err := json.NewEncoder(w).Encode(&card); err != nil {
+		return fmt.Errorf("encode: %w", err)
+	}
+
+	return nil
+}
+
 // Prepare prepares routes to use.
 func Prepare(subrouter *mux.Router, service Service, middleware func(handler.Handler) http.Handler) {
 	create := CreateHandler{service}
 	find := FindHandler{service}
+	update := UpdateHandler{service}
 
 	subrouter.Handle("", middleware(&create)).Methods(http.MethodPost)
 	subrouter.Handle("/{id}", middleware(&find)).Methods(http.MethodGet)
+	subrouter.Handle("/{id}", middleware(&update)).Methods(http.MethodPut)
 }

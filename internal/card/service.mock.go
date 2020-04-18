@@ -62,6 +62,20 @@ func (mr *MockRepositoryMockRecorder) Find(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockRepository)(nil).Find), arg0, arg1)
 }
 
+// Update mocks base method
+func (m *MockRepository) Update(arg0 context.Context, arg1 int, arg2 *Card) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update
+func (mr *MockRepositoryMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), arg0, arg1, arg2)
+}
+
 // MockValidater is a mock of Validater interface
 type MockValidater struct {
 	ctrl     *gomock.Controller

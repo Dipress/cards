@@ -73,3 +73,41 @@ func TestFindCard(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateCard(t *testing.T) {
+	t.Log("with initialized repository")
+	{
+		db, teardown := postgresDB(t)
+		defer teardown()
+
+		r := NewCardRepository(db)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		nc := card.NewCard{
+			UserID:        3,
+			Word:          "grow",
+			Transcription: "grō",
+			Translation:   "расти",
+		}
+
+		var cd card.Card
+		err := r.Create(ctx, &nc, &cd)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		t.Log("\ttest:0\tshould update the card into the database")
+		{
+			cd.Word = "climb"
+			cd.Transcription = "klīm"
+			cd.Translation = "взбираться"
+
+			err := r.Update(ctx, 3, &cd)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		}
+	}
+}
