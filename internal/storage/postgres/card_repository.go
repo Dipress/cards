@@ -75,3 +75,41 @@ func (r *CardRepository) Find(ctx context.Context, id int) (*card.Card, error) {
 
 	return &cd, nil
 }
+
+const updateCardQuery = `
+	UPDATE 
+		cards 
+	SET 
+		user_id=:user_id, 
+		word=:word,
+		transcription=:transcription,
+		translation=:translation,
+		updated_at=now() 
+	WHERE 
+		id=:id
+	`
+
+// Update updates a card by id
+func (r *CardRepository) Update(ctx context.Context, id int, ca *card.Card) error {
+	stmt, err := r.db.PrepareNamed(updateCardQuery)
+	if err != nil {
+		return fmt.Errorf("prepare named: %w", err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
+		"id":            id,
+		"user_id":       ca.UserID,
+		"word":          ca.Word,
+		"transcription": ca.Transcription,
+		"translation":   ca.Translation,
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return card.ErrNotFound
+		}
+
+		return fmt.Errorf("exec context: %w", err)
+	}
+
+	return nil
+}

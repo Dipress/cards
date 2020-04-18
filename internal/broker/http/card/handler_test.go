@@ -120,3 +120,65 @@ func TestFindHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateHandler(t *testing.T) {
+	tests := []struct {
+		name        string
+		serviceFunc func(mock *MockService)
+		code        int
+	}{
+		{
+			name: "ok",
+			serviceFunc: func(m *MockService) {
+				m.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(&card.Card{}, nil)
+			},
+			code: http.StatusOK,
+		},
+		{
+			name: "validation error",
+			serviceFunc: func(m *MockService) {
+				var ves validation.Errors
+				m.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, ves)
+			},
+			code: http.StatusUnprocessableEntity,
+		},
+		{
+			name: "not found error",
+			serviceFunc: func(m *MockService) {
+				m.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(&card.Card{}, card.ErrNotFound)
+			},
+			code: http.StatusNotFound,
+		},
+		{
+			name: "internal error",
+			serviceFunc: func(m *MockService) {
+				m.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(&card.Card{}, errors.New("mock error"))
+			},
+			code: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			service := NewMockService(ctrl)
+			tc.serviceFunc(service)
+
+			h := UpdateHandler{service}
+			w := httptest.NewRecorder()
+
+			r := httptest.NewRequest(http.MethodPut, "http://example.com", strings.NewReader("{}"))
+			r = mux.SetURLVars(r, map[string]string{"id": "1"})
+
+			err := h.Handle(w, r)
+			if w.Code != tc.code {
+				t.Errorf("unexpected code: %d expected %d error: %v", w.Code, tc.code, err)
+			}
+		})
+	}
+}
