@@ -113,3 +113,26 @@ func (r *CardRepository) Update(ctx context.Context, id int, ca *card.Card) erro
 
 	return nil
 }
+
+const deleteCardQuery = `DELETE FROM cards WHERE id=:id`
+
+// Delete deletes a card by id
+func (r *CardRepository) Delete(ctx context.Context, id int) error {
+	stmt, err := r.db.PrepareNamed(deleteCardQuery)
+	if err != nil {
+		return fmt.Errorf("prepare named: %w", err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
+		"id": id,
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return card.ErrNotFound
+		}
+
+		return fmt.Errorf("exec context: %w", err)
+	}
+
+	return nil
+}

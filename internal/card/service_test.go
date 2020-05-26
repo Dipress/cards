@@ -215,3 +215,62 @@ func Test_Update_Service(t *testing.T) {
 		})
 	}
 }
+
+func Test_Delete_Service(t *testing.T) {
+	tests := []struct {
+		name           string
+		repositoryFunc func(mock *MockRepository)
+		wantErr        bool
+	}{
+		{
+			name: "ok",
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Find(gomock.Any(), gomock.Any()).Return(&Card{}, nil)
+				m.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
+			},
+		},
+		{
+			name: "find card error",
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Find(gomock.Any(), gomock.Any()).Return(&Card{}, errors.New("mock error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "delete card error",
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Find(gomock.Any(), gomock.Any()).Return(&Card{}, nil)
+				m.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repo := NewMockRepository(ctrl)
+
+			tc.repositoryFunc(repo)
+
+			s := NewService(repo, nil)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			err := s.Delete(ctx, 1)
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.Nil(t, err)
+		})
+	}
+}

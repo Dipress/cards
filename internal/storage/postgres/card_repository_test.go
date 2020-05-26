@@ -111,3 +111,38 @@ func TestUpdateCard(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteCard(t *testing.T) {
+	t.Log("with initialized repository")
+	{
+		db, teardown := postgresDB(t)
+		defer teardown()
+
+		r := NewCardRepository(db)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		nc := card.NewCard{
+			UserID:        4,
+			Word:          "srpead",
+			Transcription: "spred",
+			Translation:   "распространять",
+		}
+
+		var cd card.Card
+		err := r.Create(ctx, &nc, &cd)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		t.Log("\ttest:0\tshould delete the card into the database")
+		{
+			err := r.Delete(ctx, cd.ID)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+		}
+	}
+}
