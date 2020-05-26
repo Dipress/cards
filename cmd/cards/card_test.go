@@ -269,3 +269,78 @@ func TestUpdateCard(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteCard(t *testing.T) {
+	t.Log("with prepred server")
+	{
+		db, teardown := postgresDB(t)
+		defer teardown()
+
+		lis, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
+		defer cancel()
+
+		cardRepo := postgres.NewCardRepository(db)
+
+		nc := card.NewCard{
+			Word:          "own",
+			Transcription: "ōn",
+			Translation:   "владеть",
+			UserID:        4,
+		}
+
+		var cd card.Card
+		if err := cardRepo.Create(ctx, &nc, &cd); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		services := setupServices(db)
+		s := setupServer(lis.Addr().String(), services)
+		go s.Serve(lis)
+		defer s.Close()
+
+		t.Log("\ttest:0\tshould delete a card.")
+		{
+			req, err := http.NewRequest(http.MethodDelete,
+				fmt.Sprintf("http://%s/api/v1/cards/%d", s.Addr, cd.ID), nil)
+			req.Header.Set("Content-Type", "application/json")
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("unexpected status code: %d expected: %d", resp.StatusCode, http.StatusOK)
+			}
+		}
+
+		t.Log("\ttest:1\tshould get a not found error")
+		{
+			req, err := http.NewRequest(http.MethodDelete,
+				fmt.Sprintf("http://%s/api/v1/cards/%d", s.Addr, 214), nil)
+			req.Header.Set("Content-Type", "application/json")
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if resp.StatusCode != http.StatusNotFound {
+				t.Errorf("unexpected status code: %d expected: %d", resp.StatusCode, http.StatusNotFound)
+			}
+		}
+	}
+}

@@ -12,6 +12,7 @@ type Repository interface {
 	Create(context.Context, *NewCard, *Card) error
 	Find(context.Context, int) (*Card, error)
 	Update(context.Context, int, *Card) error
+	Delete(context.Context, int) error
 }
 
 // Validater validates card's fields.
@@ -66,6 +67,7 @@ func (s *Service) Find(ctx context.Context, id int) (*Card, error) {
 	return c, nil
 }
 
+// Update updates a card.
 func (s *Service) Update(ctx context.Context, id int, f *Form) (*Card, error) {
 	if err := s.Validater.Validate(ctx, f); err != nil {
 		return nil, fmt.Errorf("validater validate: %w", err)
@@ -86,4 +88,18 @@ func (s *Service) Update(ctx context.Context, id int, f *Form) (*Card, error) {
 	}
 
 	return c, err
+}
+
+// Delete deletes a card.
+func (s *Service) Delete(ctx context.Context, id int) error {
+	c, err := s.Repository.Find(ctx, id)
+	if err != nil {
+		return fmt.Errorf("repository find: %w", err)
+	}
+
+	if err := s.Repository.Delete(ctx, c.ID); err != nil {
+		return fmt.Errorf("repository delete: %w", err)
+	}
+
+	return nil
 }

@@ -25,6 +25,7 @@ type Service interface {
 	Create(ctx context.Context, f *card.Form) (*card.Card, error)
 	Find(ctx context.Context, id int) (*card.Card, error)
 	Update(ctx context.Context, id int, f *card.Form) (*card.Card, error)
+	Delete(ctx context.Context, id int) error
 }
 
 // CreateHandler for create requests.
@@ -131,13 +132,43 @@ func (h *UpdateHandler) process(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// DeleteHandler for delete requests.
+type DeleteHandler struct {
+	Service
+}
+
+func (h *DeleteHandler) Handle(w http.ResponseWriter, r *http.Request) error {
+	if err := h.process(w, r); err != nil {
+		return response.HandleError(err, w)
+	}
+
+	return nil
+}
+
+func (h *DeleteHandler) process(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return response.ErrBadRequest
+	}
+
+	if err := h.Service.Delete(r.Context(), id); err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+
+	return nil
+}
+
 // Prepare prepares routes to use.
 func Prepare(subrouter *mux.Router, service Service, middleware func(handler.Handler) http.Handler) {
 	create := CreateHandler{service}
 	find := FindHandler{service}
 	update := UpdateHandler{service}
+	delete := DeleteHandler{service}
 
 	subrouter.Handle("", middleware(&create)).Methods(http.MethodPost)
 	subrouter.Handle("/{id}", middleware(&find)).Methods(http.MethodGet)
 	subrouter.Handle("/{id}", middleware(&update)).Methods(http.MethodPut)
+	subrouter.Handle("/{id}", middleware(&delete)).Methods(http.MethodDelete)
 }
