@@ -25,7 +25,7 @@ func TestCreateCard(t *testing.T) {
 		}
 
 		services := setupServices(db)
-		s := setupServer(lis.Addr().String(), services)
+		s := setupServer(lis.Addr().String(), nil, services)
 		go s.Serve(lis)
 		defer s.Close()
 
@@ -109,7 +109,7 @@ func TestFindCard(t *testing.T) {
 		}
 
 		services := setupServices(db)
-		s := setupServer(lis.Addr().String(), services)
+		s := setupServer(lis.Addr().String(), nil, services)
 		go s.Serve(lis)
 		defer s.Close()
 
@@ -184,7 +184,7 @@ func TestUpdateCard(t *testing.T) {
 		}
 
 		services := setupServices(db)
-		s := setupServer(lis.Addr().String(), services)
+		s := setupServer(lis.Addr().String(), nil, services)
 		go s.Serve(lis)
 		defer s.Close()
 
@@ -299,7 +299,7 @@ func TestDeleteCard(t *testing.T) {
 		}
 
 		services := setupServices(db)
-		s := setupServer(lis.Addr().String(), services)
+		s := setupServer(lis.Addr().String(), nil, services)
 		go s.Serve(lis)
 		defer s.Close()
 
